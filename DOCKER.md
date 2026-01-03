@@ -24,9 +24,19 @@ DATABASE_URL="file:./prisma/dev.db"
 # JWT
 JWT_SECRET=your_random_secret_key_min_32_chars
 
+# Caddy (для автоматического SSL)
+# Для production укажите ваш домен:
+CADDY_DOMAIN=your-domain.com
+CADDY_EMAIL=admin@your-domain.com
+
 # App URLs
+# Для localhost (без SSL):
 NEXTAUTH_URL=http://localhost:3001
 NEXT_PUBLIC_APP_URL=http://localhost:3001
+
+# Для production с доменом (раскомментируйте и используйте вместо выше):
+# NEXTAUTH_URL=https://your-domain.com
+# NEXT_PUBLIC_APP_URL=https://your-domain.com
 ```
 
 2. **Соберите и запустите контейнер:**
@@ -74,7 +84,11 @@ docker-compose down
 
 ### Просмотр логов
 ```bash
+# Логи приложения
 docker-compose logs -f vinyl
+
+# Логи Caddy (reverse proxy и SSL)
+docker-compose logs -f caddy
 ```
 
 ### Перезапуск
@@ -113,6 +127,11 @@ Docker Compose монтирует следующие директории для
 - `./public/generated` - сгенерированные видео
 - `./temp` - временные файлы
 
+Volumes для Caddy (автоматически создаются):
+- `caddy_data` - данные Caddy (SSL сертификаты)
+- `caddy_config` - конфигурация Caddy
+- `caddy_logs` - логи доступа
+
 ## Первый вход в админку
 
 После выполнения `npm run setup` или `npm run init-admin`:
@@ -134,11 +153,53 @@ curl -X POST "https://your-domain.com/api/telegram/setup-webhook"
 curl -X POST "https://api.telegram.org/bot<YOUR_TOKEN>/setWebhook?url=https://your-domain.com/api/telegram/webhook"
 ```
 
+## Настройка SSL с Caddy
+
+Caddy автоматически получает SSL сертификаты от Let's Encrypt. Для настройки:
+
+1. **Укажите домен в `.env` файле:**
+```env
+CADDY_DOMAIN=your-domain.com
+CADDY_EMAIL=admin@your-domain.com
+```
+
+2. **Убедитесь, что домен указывает на ваш сервер:**
+   - A-запись должна указывать на IP адрес сервера
+   - Порты 80 и 443 должны быть открыты в firewall
+
+3. **Обновите URL приложения в `.env`:**
+```env
+NEXTAUTH_URL=https://your-domain.com
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+```
+
+4. **Перезапустите контейнеры:**
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+5. **Проверьте логи Caddy:**
+```bash
+docker-compose logs -f caddy
+```
+
+Caddy автоматически получит SSL сертификат при первом запуске. Это может занять несколько минут.
+
+**Важно:** Для тестирования можно использовать staging окружение Let's Encrypt. Раскомментируйте строку `acme_ca` в `docker/caddy-entrypoint.sh`.
+
 ## Проверка работы
 
-1. Откройте `http://localhost:3001` в браузере
+### Для localhost (без SSL):
+1. Откройте `http://localhost` в браузере (Caddy проксирует на порт 80)
 2. Создайте тестовую генерацию
-3. Проверьте админку: `http://localhost:3001/admin`
+3. Проверьте админку: `http://localhost/admin`
+
+### Для production с доменом:
+1. Откройте `https://your-domain.com` в браузере
+2. Убедитесь, что SSL сертификат работает (зеленый замочек в браузере)
+3. Создайте тестовую генерацию
+4. Проверьте админку: `https://your-domain.com/admin`
 
 ## Обновление приложения
 
@@ -190,11 +251,40 @@ docker-compose exec vinyl ffmpeg -version
 
 ### Проблемы с портами
 
-Если порт 3001 занят, измените его в `docker-compose.yml`:
+Приложение больше не пробрасывает порт 3001 наружу - оно доступно только через Caddy на портах 80 и 443.
+
+Если порты 80 или 443 заняты, измените их в `docker-compose.yml`:
 ```yaml
-ports:
-  - "3002:3001"
+caddy:
+  ports:
+    - "8080:80"    # HTTP
+    - "8443:443"   # HTTPS
+    - "8443:443/udp"
 ```
+
+### Проблемы с SSL сертификатами
+
+Если Caddy не может получить SSL сертификат:
+
+1. **Проверьте, что домен указывает на сервер:**
+```bash
+dig your-domain.com
+```
+
+2. **Убедитесь, что порты 80 и 443 открыты:**
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow 443/udp
+```
+
+3. **Проверьте логи Caddy:**
+```bash
+docker-compose logs caddy
+```
+
+4. **Для тестирования используйте staging окружение:**
+   Раскомментируйте строку `acme_ca` в `docker/caddy-entrypoint.sh`
 
 ## Production рекомендации
 
@@ -203,10 +293,10 @@ ports:
    - Обновите `prisma/schema.prisma`
    - Добавьте PostgreSQL сервис в `docker-compose.yml`
 
-2. **Настройте reverse proxy** (Nginx/Traefik) для:
-   - SSL/TLS сертификатов
-   - Доменного имени
-   - Балансировки нагрузки
+2. **Caddy уже настроен** для автоматического получения SSL сертификатов:
+   - Укажите `CADDY_DOMAIN` в `.env` файле
+   - Caddy автоматически получит SSL сертификат от Let's Encrypt
+   - Приложение будет доступно по HTTPS на портах 80 и 443
 
 3. **Настройте резервное копирование** базы данных
 

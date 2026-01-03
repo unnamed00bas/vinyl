@@ -1,11 +1,32 @@
 services:
+  caddy:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.caddy
+    container_name: vinyl-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    networks:
+      - vinyl-network
+    depends_on:
+      - vinyl
+    environment:
+      - CADDY_DOMAIN=${CADDY_DOMAIN:-}
+      - CADDY_EMAIL=${CADDY_EMAIL:-admin@localhost}
+
   vinyl:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: vinyl-app
-    ports:
-      - "3001:3001"
+    networks:
+      - vinyl-network
+    # Убираем проброс портов наружу, приложение доступно только через Caddy
+    expose:
+      - "3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -15,6 +36,9 @@ services:
       - KIE_AI_API_KEY=${KIE_AI_API_KEY}
       - KIE_AI_API_URL=${KIE_AI_API_URL:-https://api.kie.ai}
       - JWT_SECRET=${JWT_SECRET}
+      # URL приложения (автоматически определяется на основе CADDY_DOMAIN)
+      # Если CADDY_DOMAIN указан, используйте https://${CADDY_DOMAIN}
+      # Иначе используйте http://localhost:3001
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3001}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
     restart: unless-stopped
@@ -24,3 +48,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+networks:
+  vinyl-network:
+    driver: bridge

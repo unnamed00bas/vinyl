@@ -76,9 +76,25 @@ sudo ./scripts/ubuntu-nginx.sh --domain your-domain.com --port 3000
 
 Подробнее: [UBUNTU_DEPLOYMENT.md](./UBUNTU_DEPLOYMENT.md)
 
+### Docker
+
+Для развертывания через Docker с автоматическим SSL:
+
+```bash
+# Настройте .env файл с вашим доменом
+CADDY_DOMAIN=your-domain.com
+CADDY_EMAIL=admin@your-domain.com
+
+# Запустите контейнеры
+docker-compose up -d --build
+```
+
+Caddy автоматически получит SSL сертификат от Let's Encrypt при первом запуске.
+
+Подробнее: [DOCKER.md](./DOCKER.md)
+
 ### Другие платформы
 
-- Docker: [DOCKER.md](./DOCKER.md)
 - Локальная разработка: [QUICKSTART.md](./QUICKSTART.md)
 
 ## Лицензия

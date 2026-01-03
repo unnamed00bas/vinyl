@@ -1,0 +1,28 @@
+# Caddyfile - шаблон (генерируется автоматически через entrypoint скрипт)
+# Этот файл используется только как пример. Реальная конфигурация генерируется
+# скриптом docker/caddy-entrypoint.sh на основе переменных окружения:
+# - CADDY_DOMAIN - ваш домен (например, example.com)
+# - CADDY_EMAIL - email для уведомлений Let's Encrypt
+
+# Пример конфигурации для production с доменом:
+# {
+#     email admin@example.com
+# }
+# 
+# example.com {
+#     reverse_proxy vinyl:3001
+#     
+#     log {
+#         output file /var/log/caddy/access.log
+#         format json
+#     }
+# }
+
+# Пример конфигурации для localhost (без SSL):
+# {
+#     email admin@localhost
+# }
+# 
+# :80 {
+#     reverse_proxy vinyl:3001
+# }
