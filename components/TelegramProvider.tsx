@@ -63,13 +63,23 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
 
   const sendData = (data: any) => {
     if (typeof window !== 'undefined' && WebApp.sendData) {
-      WebApp.sendData(JSON.stringify(data))
+      try {
+        WebApp.sendData(JSON.stringify(data))
+      } catch (error) {
+        console.warn('WebApp.sendData не поддерживается:', error)
+      }
     }
   }
 
   const showAlert = (message: string) => {
     if (typeof window !== 'undefined' && WebApp.showAlert) {
-      WebApp.showAlert(message)
+      try {
+        WebApp.showAlert(message)
+      } catch (error) {
+        // Если метод не поддерживается, используем fallback
+        console.warn('WebApp.showAlert не поддерживается:', error)
+        alert(message)
+      }
     } else {
       alert(message)
     }
@@ -78,9 +88,15 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const showConfirm = (message: string): Promise<boolean> => {
     return new Promise((resolve) => {
       if (typeof window !== 'undefined' && WebApp.showConfirm) {
-        WebApp.showConfirm(message, (confirmed) => {
-          resolve(confirmed)
-        })
+        try {
+          WebApp.showConfirm(message, (confirmed) => {
+            resolve(confirmed)
+          })
+        } catch (error) {
+          // Если метод не поддерживается, используем fallback
+          console.warn('WebApp.showConfirm не поддерживается:', error)
+          resolve(confirm(message))
+        }
       } else {
         resolve(confirm(message))
       }
@@ -89,7 +105,13 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
 
   const openLink = (url: string) => {
     if (typeof window !== 'undefined' && WebApp.openLink) {
-      WebApp.openLink(url)
+      try {
+        WebApp.openLink(url)
+      } catch (error) {
+        // Если метод не поддерживается, используем fallback
+        console.warn('WebApp.openLink не поддерживается:', error)
+        window.open(url, '_blank')
+      }
     } else {
       window.open(url, '_blank')
     }
@@ -97,13 +119,21 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
 
   const ready = () => {
     if (typeof window !== 'undefined' && WebApp.ready) {
-      WebApp.ready()
+      try {
+        WebApp.ready()
+      } catch (error) {
+        console.warn('WebApp.ready не поддерживается:', error)
+      }
     }
   }
 
   const expand = () => {
     if (typeof window !== 'undefined' && WebApp.expand) {
-      WebApp.expand()
+      try {
+        WebApp.expand()
+      } catch (error) {
+        console.warn('WebApp.expand не поддерживается:', error)
+      }
     }
   }
 

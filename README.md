@@ -15,7 +15,7 @@
 
 - **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
 - **Backend**: Node.js, Express
-- **Database**: PostgreSQL, Prisma
+- **Database**: SQLite, Prisma
 - **Video Processing**: FFmpeg
 - **AI Integration**: KIE AI (Suno API, LLM)
 - **Telegram**: Bot API, Mini App SDK

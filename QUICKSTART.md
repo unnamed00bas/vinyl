@@ -7,19 +7,10 @@
 npm install
 ```
 
-### 2. Настройка базы данных
-```bash
-# Создайте базу данных PostgreSQL
-createdb vinyl_db
-
-# Или используйте Docker
-docker run -d --name vinyl-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=vinyl_db -p 5432:5432 postgres:14
-```
-
-### 3. Настройка переменных окружения
+### 2. Настройка переменных окружения
 Создайте `.env` файл:
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/vinyl_db
+DATABASE_URL="file:./dev.db"
 JWT_SECRET=your_random_secret_here
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_BOT_USERNAME=your_bot_username
@@ -89,9 +80,7 @@ sudo apt-get install ffmpeg
 
 ### Ошибки базы данных
 ```bash
-# Проверьте подключение
-psql -U user -d vinyl_db
-
+# Убедитесь, что файл базы данных создан
 # Пересоздайте миграции
 npm run db:migrate reset
 ```

@@ -133,7 +133,7 @@ async function generateMusicAsync(generationId: string, prompt: string) {
 
     // Генерируем музыку через Suno
     const sunoResponse = await generateMusicWithSuno(prompt, {
-      duration: 30,
+      model: 'V4_5',
     })
 
     // Сохраняем taskId
@@ -178,7 +178,19 @@ async function checkSunoStatusAndContinue(
     try {
       const status = await checkSunoTaskStatus(taskId)
 
-      if (status.status === 'completed' && status.audioUrl) {
+      // Проверяем успешное завершение генерации
+      if (
+        (status.status === 'SUCCESS' || status.status === 'FIRST_SUCCESS') &&
+        status.response?.sunoData &&
+        status.response.sunoData.length > 0
+      ) {
+        const track = status.response.sunoData[0]
+        
+        if (!track.audioUrl) {
+          // Если трек еще не готов, продолжаем ждать
+          return
+        }
+
         clearInterval(checkInterval)
 
         // Скачиваем аудио
@@ -187,14 +199,14 @@ async function checkSunoStatusAndContinue(
           'temp',
           `audio_${generationId}.mp3`
         )
-        await downloadAudio(status.audioUrl, audioPath)
+        await downloadAudio(track.audioUrl, audioPath)
 
         // Обновляем запись
         await prisma.generation.update({
           where: { id: generationId },
           data: {
-            audioUrl: status.audioUrl,
-            sunoAudioId: status.audioId,
+            audioUrl: track.audioUrl,
+            sunoAudioId: track.id,
             status: 'GENERATING_IMAGE',
           },
         })
@@ -270,11 +282,17 @@ async function checkSunoStatusAndContinue(
         if (fs.existsSync(imagePath) && !generation?.imageUrl) {
           fs.unlinkSync(imagePath)
         }
-      } else if (status.status === 'failed') {
+      } else if (
+        status.status === 'FAILED' ||
+        status.status === 'CREATE_TASK_FAILED'
+      ) {
         clearInterval(checkInterval)
+        console.error('Ошибка генерации:', status.errorMessage)
         await prisma.generation.update({
           where: { id: generationId },
-          data: { status: 'FAILED' },
+          data: {
+            status: 'FAILED',
+          },
         })
       } else if (attempts >= maxAttempts) {
         clearInterval(checkInterval)

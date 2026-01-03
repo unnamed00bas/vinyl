@@ -36,6 +36,12 @@ next-env.d.ts
 # Prisma
 /prisma/migrations
 
+# SQLite database
+*.db
+*.db-journal
+dev.db
+dev.db-journal
+
 # Generated files
 /public/generated/
 /temp/

@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -38,7 +38,7 @@ model Generation {
   audioUrl      String?
   imageUrl      String?
   videoUrl      String?
-  status        GenerationStatus @default(PENDING)
+  status        String @default("PENDING")
   
   sunoTaskId    String?
   sunoAudioId   String?
@@ -50,14 +50,6 @@ model Generation {
   @@index([status])
 }
 
-enum GenerationStatus {
-  PENDING
-  GENERATING_AUDIO
-  GENERATING_IMAGE
-  GENERATING_VIDEO
-  COMPLETED
-  FAILED
-}
 
 model Payment {
   id            String    @id @default(cuid())
@@ -66,7 +58,7 @@ model Payment {
   
   amount        Int       // в Telegram Stars
   currency      String    @default("XTR")
-  status        PaymentStatus @default(PENDING)
+  status        String @default("PENDING")
   
   telegramChargeId String?
   
@@ -77,27 +69,17 @@ model Payment {
   @@index([status])
 }
 
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
 
 model Admin {
   id            String    @id @default(cuid())
   email         String    @unique
   password      String
   name          String
-  role          AdminRole @default(ADMIN)
+  role          String @default("ADMIN")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
 
-enum AdminRole {
-  ADMIN
-  SUPER_ADMIN
-}
 
 model Settings {
   id            String    @id @default(cuid())

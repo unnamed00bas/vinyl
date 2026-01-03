@@ -1,26 +1,42 @@
 import axios from 'axios'
 
-const KIE_AI_API_URL = process.env.KIE_AI_API_URL || 'https://api.kie.ai'
+const KIE_AI_API_URL = process.env.KIE_AI_API_URL || 'https://api.kie.ai/api/v1'
 const KIE_AI_API_KEY = process.env.KIE_AI_API_KEY
 
 interface SunoGenerateRequest {
   prompt: string
+  customMode?: boolean
+  instrumental?: boolean
+  model?: string
+  style?: string
   title?: string
-  tags?: string[]
-  duration?: number
+  negativeTags?: string
+  callBackUrl?: string
 }
 
 interface SunoGenerateResponse {
   taskId: string
-  status: string
+}
+
+interface SunoTrack {
+  id: string
+  title: string
+  audioUrl: string
+  streamAudioUrl?: string
+  imageUrl?: string
+  prompt?: string
+  tags?: string
+  duration?: number
+  createTime?: string
 }
 
 interface SunoTaskStatus {
   taskId: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
-  audioUrl?: string
-  audioId?: string
-  error?: string
+  status: 'SUCCESS' | 'FIRST_SUCCESS' | 'TEXT_SUCCESS' | 'PENDING' | 'PROCESSING' | 'CREATE_TASK_FAILED' | 'FAILED'
+  response?: {
+    sunoData: SunoTrack[]
+  }
+  errorMessage?: string
 }
 
 /**
@@ -28,21 +44,44 @@ interface SunoTaskStatus {
  */
 export async function generateMusicWithSuno(
   prompt: string,
-  options?: { title?: string; tags?: string[]; duration?: number }
+  options?: { 
+    title?: string
+    style?: string
+    customMode?: boolean
+    instrumental?: boolean
+    model?: string
+    negativeTags?: string
+    callBackUrl?: string
+  }
 ): Promise<SunoGenerateResponse> {
   if (!KIE_AI_API_KEY) {
     throw new Error('KIE_AI_API_KEY не настроен')
   }
 
   try {
+    const requestBody: SunoGenerateRequest = {
+      prompt,
+      customMode: options?.customMode || false,
+      instrumental: options?.instrumental || false,
+      model: options?.model || 'V4_5',
+    }
+
+    if (options?.title) {
+      requestBody.title = options.title
+    }
+    if (options?.style) {
+      requestBody.style = options.style
+    }
+    if (options?.negativeTags) {
+      requestBody.negativeTags = options.negativeTags
+    }
+    if (options?.callBackUrl) {
+      requestBody.callBackUrl = options.callBackUrl
+    }
+
     const response = await axios.post(
-      `${KIE_AI_API_URL}/suno/generate`,
-      {
-        prompt,
-        title: options?.title,
-        tags: options?.tags || [],
-        duration: options?.duration || 30,
-      },
+      `${KIE_AI_API_URL}/generate`,
+      requestBody,
       {
         headers: {
           'Authorization': `Bearer ${KIE_AI_API_KEY}`,
@@ -51,11 +90,17 @@ export async function generateMusicWithSuno(
       }
     )
 
-    return response.data
+    if (response.data.code !== 200) {
+      throw new Error(response.data.msg || 'Ошибка при генерации музыки')
+    }
+
+    return {
+      taskId: response.data.data.taskId,
+    }
   } catch (error: any) {
     console.error('Ошибка при генерации музыки через Suno:', error)
     throw new Error(
-      error.response?.data?.message || 'Ошибка при генерации музыки'
+      error.response?.data?.msg || error.message || 'Ошибка при генерации музыки'
     )
   }
 }
@@ -72,19 +117,32 @@ export async function checkSunoTaskStatus(
 
   try {
     const response = await axios.get(
-      `${KIE_AI_API_URL}/suno/task/${taskId}`,
+      `${KIE_AI_API_URL}/generate/record-info`,
       {
+        params: {
+          taskId,
+        },
         headers: {
           'Authorization': `Bearer ${KIE_AI_API_KEY}`,
         },
       }
     )
 
-    return response.data
+    if (response.data.code !== 200) {
+      throw new Error(response.data.msg || 'Ошибка при проверке статуса')
+    }
+
+    const data = response.data.data
+    return {
+      taskId: data.taskId || taskId,
+      status: data.status || 'PENDING',
+      response: data.response,
+      errorMessage: data.errorMessage,
+    }
   } catch (error: any) {
     console.error('Ошибка при проверке статуса задачи:', error)
     throw new Error(
-      error.response?.data?.message || 'Ошибка при проверке статуса'
+      error.response?.data?.msg || error.message || 'Ошибка при проверке статуса'
     )
   }
 }

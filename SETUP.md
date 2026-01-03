@@ -3,7 +3,6 @@
 ## Требования
 
 - Node.js 18+ 
-- PostgreSQL 14+
 - FFmpeg (для генерации видео)
 - Telegram Bot Token
 
@@ -29,8 +28,8 @@ TELEGRAM_BOT_USERNAME=your_bot_username
 KIE_AI_API_KEY=your_kie_ai_api_key
 KIE_AI_API_URL=https://api.kie.ai
 
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/vinyl_db
+# Database (SQLite)
+DATABASE_URL="file:./dev.db"
 
 # JWT
 JWT_SECRET=your_random_secret_key
@@ -42,7 +41,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 3. **Настройте базу данных:**
 ```bash
-# Создайте миграции
+# Создайте миграции (SQLite создаст файл dev.db автоматически)
 npm run db:migrate
 
 # Сгенерируйте Prisma Client
@@ -51,6 +50,8 @@ npm run db:generate
 # Настройте дефолтные данные
 npm run setup
 ```
+
+⚠️ **Примечание:** Если у вас были старые миграции для PostgreSQL, удалите папку `prisma/migrations` и создайте новую миграцию для SQLite.
 
 4. **Установите FFmpeg:**
 
@@ -143,7 +144,7 @@ vinyl/
 
 1. Подключите репозиторий к Vercel
 2. Настройте переменные окружения
-3. Установите PostgreSQL (через Vercel Postgres или внешний)
+3. ⚠️ **Примечание:** SQLite не поддерживается на Vercel в production. Для production используйте PostgreSQL или другую облачную БД
 4. Запустите миграции: `npm run db:migrate`
 
 ### Docker
@@ -159,7 +160,8 @@ vinyl/
 - Проверьте: `ffmpeg -version`
 
 ### Ошибки базы данных
-- Проверьте подключение к PostgreSQL
+- Убедитесь, что файл базы данных создан (dev.db в корне проекта)
+- Проверьте права доступа к файлу базы данных
 - Убедитесь, что миграции применены: `npm run db:migrate`
 
 ### Telegram webhook не работает
