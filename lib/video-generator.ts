@@ -1,7 +1,33 @@
-import ffmpeg from 'fluent-ffmpeg'
-import { createCanvas, loadImage } from 'canvas'
 import * as fs from 'fs'
 import * as path from 'path'
+
+// Динамический импорт canvas
+let canvasModule: typeof import('canvas') | null = null
+
+async function getCanvas() {
+  if (!canvasModule) {
+    try {
+      canvasModule = await import('canvas')
+    } catch (error) {
+      throw new Error(
+        'Canvas module не доступен. Убедитесь, что canvas установлен и совместим с вашей платформой.'
+      )
+    }
+  }
+  return canvasModule
+}
+
+// Проверка доступности FFmpeg
+function isFFmpegAvailable(): boolean {
+  try {
+    // Проверяем наличие ffmpeg в системе
+    const { execSync } = require('child_process')
+    execSync('ffmpeg -version', { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+}
 
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'generated')
 const TEMP_DIR = path.join(process.cwd(), 'temp')
@@ -32,6 +58,15 @@ export async function generateVinylVideo({
   duration = 30,
   size = { width: 1080, height: 1080 },
 }: GenerateVinylVideoOptions): Promise<string> {
+  // Проверяем доступность FFmpeg
+  if (!isFFmpegAvailable()) {
+    throw new Error(
+      'FFmpeg недоступен. Генерация видео требует FFmpeg. Установите FFmpeg в системе.'
+    )
+  }
+
+  const ffmpeg = await import('fluent-ffmpeg')
+
   return new Promise((resolve, reject) => {
     // Создаем кадры для анимации
     const framesDir = path.join(TEMP_DIR, `frames_${Date.now()}`)
@@ -47,7 +82,7 @@ export async function generateVinylVideo({
     })
       .then(() => {
         // Собираем видео из кадров с аудио
-        ffmpeg()
+        ffmpeg.default()
           .input(path.join(framesDir, 'frame_%04d.png'))
           .inputOptions(['-framerate', '30'])
           .input(audioPath)
@@ -93,11 +128,30 @@ async function generateVinylFrames({
   fps: number
 }): Promise<void> {
   const totalFrames = duration * fps
+  const { createCanvas, loadImage, Image } = await getCanvas()
   const canvas = createCanvas(size.width, size.height)
   const ctx = canvas.getContext('2d')
 
   // Загружаем центральное изображение
-  const centerImage = await loadImage(centerImagePath)
+  // canvas loadImage принимает путь к файлу или URL
+  // Для Buffer используем Image класс напрямую
+  let centerImage: any
+  if (typeof centerImagePath === 'string' && centerImagePath.startsWith('http')) {
+    // Если это URL, используем loadImage напрямую
+    centerImage = await loadImage(centerImagePath)
+  } else if (Buffer.isBuffer(centerImagePath)) {
+    // Если это Buffer, создаем Image и устанавливаем src
+    const img = new Image()
+    centerImage = new Promise((resolve, reject) => {
+      img.onload = () => resolve(img)
+      img.onerror = reject
+      img.src = centerImagePath
+    })
+    centerImage = await centerImage
+  } else {
+    // Если это путь к файлу, используем loadImage
+    centerImage = await loadImage(centerImagePath)
+  }
 
   // Параметры пластинки
   const centerX = size.width / 2

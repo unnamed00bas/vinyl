@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { parseTelegramInitData } from '@/lib/telegram'
+import { parseTelegramInitData, createInvoiceLink, sendInvoice } from '@/lib/telegram'
 
 /**
  * Создание платежа через Telegram Stars
@@ -42,25 +42,56 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Создаем платеж
-    const payment = await prisma.payment.create({
-      data: {
+    // Проверяем, есть ли уже активный платеж для этой генерации
+    const existingPayment = await prisma.payment.findFirst({
+      where: {
         userId: user.id,
-        amount: 10, // 10 Telegram Stars
-        currency: 'XTR',
         status: 'PENDING',
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     })
 
-    // В реальном приложении здесь нужно вызвать Telegram Bot API
-    // для создания инвойса через createInvoiceLink или sendInvoice
+    let payment
+    if (existingPayment) {
+      payment = existingPayment
+    } else {
+      // Создаем новый платеж
+      payment = await prisma.payment.create({
+        data: {
+          userId: user.id,
+          amount: 10, // 10 Telegram Stars
+          currency: 'XTR',
+          status: 'PENDING',
+        },
+      })
+    }
+
+    // Создаем инвойс через Telegram Bot API
+    const chatId = telegramUser.user.id
+    const invoiceLink = await createInvoiceLink(
+      chatId,
+      'Генерация виниловой пластинки',
+      'Создание уникальной виниловой пластинки с музыкой',
+      JSON.stringify({ paymentId: payment.id, generationId }),
+      10, // 10 Telegram Stars
+      'XTR'
+    )
+
+    if (!invoiceLink) {
+      // Если не удалось создать инвойс, возвращаем ошибку
+      return NextResponse.json(
+        { error: 'Не удалось создать платеж. Попробуйте позже.' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       paymentId: payment.id,
       amount: payment.amount,
       currency: payment.currency,
-      // В реальном приложении здесь будет invoice URL
-      invoiceUrl: `https://t.me/${process.env.TELEGRAM_BOT_USERNAME}?start=pay_${payment.id}`,
+      invoiceUrl: invoiceLink,
     })
   } catch (error: any) {
     console.error('Ошибка при создании платежа:', error)
@@ -73,19 +104,43 @@ export async function POST(request: NextRequest) {
 
 /**
  * Webhook для обработки платежей от Telegram
+ * Вызывается автоматически при успешном платеже через Telegram
  */
 export async function PUT(request: NextRequest) {
   try {
-    const { paymentId, telegramChargeId } = await request.json()
+    const { paymentId, telegramChargeId, telegramPaymentChargeId } = await request.json()
 
-    // В реальном приложении здесь нужно проверить подпись от Telegram
-    // и обновить статус платежа
+    if (!paymentId) {
+      return NextResponse.json(
+        { error: 'ID платежа обязателен' },
+        { status: 400 }
+      )
+    }
 
-    const payment = await prisma.payment.update({
+    // Находим платеж
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { user: true },
+    })
+
+    if (!payment) {
+      return NextResponse.json(
+        { error: 'Платеж не найден' },
+        { status: 404 }
+      )
+    }
+
+    if (payment.status === 'COMPLETED') {
+      // Платеж уже обработан
+      return NextResponse.json({ success: true, payment })
+    }
+
+    // Обновляем статус платежа
+    const updatedPayment = await prisma.payment.update({
       where: { id: paymentId },
       data: {
         status: 'COMPLETED',
-        telegramChargeId,
+        telegramChargeId: telegramChargeId || telegramPaymentChargeId,
       },
     })
 
@@ -97,7 +152,7 @@ export async function PUT(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, payment })
+    return NextResponse.json({ success: true, payment: updatedPayment })
   } catch (error: any) {
     console.error('Ошибка при обработке платежа:', error)
     return NextResponse.json(

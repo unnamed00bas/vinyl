@@ -232,27 +232,33 @@ async function checkSunoStatusAndContinue(
           })
         }
 
-        // Генерируем видео
+        // Генерируем видео (если доступно)
         await prisma.generation.update({
           where: { id: generationId },
           data: { status: 'GENERATING_VIDEO' },
         })
 
-        const videoPath = path.join(
-          process.cwd(),
-          'public',
-          'generated',
-          `vinyl_${generationId}.mp4`
-        )
+        let videoUrl: string | null = null
+        try {
+          const videoPath = path.join(
+            process.cwd(),
+            'public',
+            'generated',
+            `vinyl_${generationId}.mp4`
+          )
 
-        await generateVinylVideo({
-          audioPath,
-          centerImagePath: imagePath,
-          outputPath: videoPath,
-          duration: 30,
-        })
+          await generateVinylVideo({
+            audioPath,
+            centerImagePath: imagePath,
+            outputPath: videoPath,
+            duration: 30,
+          })
 
-        const videoUrl = `/generated/vinyl_${generationId}.mp4`
+          videoUrl = `/generated/vinyl_${generationId}.mp4`
+        } catch (videoError: any) {
+          console.error('Ошибка генерации видео (возможно, FFmpeg недоступен):', videoError)
+          // Генерация видео недоступна, оставляем только аудио
+        }
 
         await prisma.generation.update({
           where: { id: generationId },

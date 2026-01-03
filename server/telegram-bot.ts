@@ -111,21 +111,50 @@ async function handleSuccessfulPayment(message: any) {
   const chatId = message.chat.id
   const payment = message.successful_payment
 
-  // Обновляем статус платежа в базе данных
-  // Это должно быть сделано через API endpoint
+  try {
+    // Извлекаем paymentId из payload
+    let paymentId: string | null = null
+    try {
+      const payload = JSON.parse(payment.invoice_payload || '{}')
+      paymentId = payload.paymentId
+    } catch (e) {
+      console.error('Ошибка при парсинге payload:', e)
+    }
 
-  await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
-    chat_id: chatId,
-    text: `✅ Платеж успешно обработан! Теперь ты можешь создать новую пластинку.`,
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: '🎵 Создать пластинку',
-            web_app: { url: WEB_APP_URL },
-          },
+    // Обновляем статус платежа в базе данных через API endpoint
+    if (paymentId) {
+      try {
+        const apiUrl = `${WEB_APP_URL}/api/payment`
+        await axios.put(apiUrl, {
+          paymentId,
+          telegramChargeId: payment.telegram_payment_charge_id,
+          telegramPaymentChargeId: payment.telegram_payment_charge_id,
+        })
+      } catch (error: any) {
+        console.error('Ошибка при обновлении платежа через API:', error)
+      }
+    }
+
+    await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+      chat_id: chatId,
+      text: `✅ Платеж успешно обработан! Теперь ты можешь создать новую пластинку.`,
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '🎵 Создать пластинку',
+              web_app: { url: WEB_APP_URL },
+            },
+          ],
         ],
-      ],
-    },
-  })
+      },
+    })
+  } catch (error: any) {
+    console.error('Ошибка при обработке успешного платежа:', error)
+    // Все равно отправляем сообщение пользователю
+    await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+      chat_id: chatId,
+      text: `✅ Платеж успешно обработан! Теперь ты можешь создать новую пластинку.`,
+    })
+  }
 }

@@ -45,9 +45,18 @@ npm run dev
 ```bash
 ngrok http 3000
 ```
-4. Установите webhook:
+4. Установите webhook (автоматически через API):
 ```bash
+# После запуска приложения (npm run dev)
+curl -X POST "http://localhost:3000/api/telegram/setup-webhook"
+
+# Или вручную через Telegram API
 curl -X POST "https://api.telegram.org/bot<YOUR_TOKEN>/setWebhook?url=https://your-ngrok-url.ngrok.io/api/telegram/webhook"
+```
+
+5. Проверьте статус webhook:
+```bash
+curl "http://localhost:3000/api/telegram/setup-webhook"
 ```
 
 ## Первый вход в админку
@@ -88,11 +97,16 @@ npm run db:migrate reset
 ### Проблемы с KIE AI
 См. [KIE_AI_INTEGRATION.md](./KIE_AI_INTEGRATION.md)
 
+### Проблемы с платежами Telegram Stars
+См. [TELEGRAM_PAYMENTS.md](./TELEGRAM_PAYMENTS.md)
+
 ## Следующие шаги
 
-- Настройте KIE AI интеграцию
-- Настройте Telegram Bot
-- Настройте платежи через Telegram Stars
-- Разверните на продакшн (Vercel, Railway, etc.)
+- ✅ Настройте KIE AI интеграцию - см. [KIE_AI_INTEGRATION.md](./KIE_AI_INTEGRATION.md)
+- ✅ Настройте Telegram Bot - установите webhook через `/api/telegram/setup-webhook`
+- ✅ Настройте платежи через Telegram Stars - см. [TELEGRAM_PAYMENTS.md](./TELEGRAM_PAYMENTS.md)
+- Разверните на продакшн:
+  - Ubuntu Server - см. [UBUNTU_DEPLOYMENT.md](./UBUNTU_DEPLOYMENT.md)
+  - Docker - см. [DOCKER.md](./DOCKER.md)
 
 Подробнее в [SETUP.md](./SETUP.md)

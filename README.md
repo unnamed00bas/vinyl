@@ -52,6 +52,34 @@ npm run dev
 - `/prisma` - Схема базы данных
 - `/lib` - Утилиты и хелперы
 - `/public` - Статические файлы
+- `/scripts` - Скрипты для установки и деплоя
+
+## Развертывание
+
+### Ubuntu Server
+
+Для развертывания на Ubuntu Server используйте готовые скрипты:
+
+```bash
+# Первоначальная установка
+sudo ./scripts/ubuntu-setup.sh --domain your-domain.com
+
+# Управление приложением
+./scripts/ubuntu-manage.sh [start|stop|restart|status|logs|webhook]
+
+# Деплой обновлений
+./scripts/ubuntu-deploy.sh
+
+# Настройка Nginx
+sudo ./scripts/ubuntu-nginx.sh --domain your-domain.com --port 3000
+```
+
+Подробнее: [UBUNTU_DEPLOYMENT.md](./UBUNTU_DEPLOYMENT.md)
+
+### Другие платформы
+
+- Docker: [DOCKER.md](./DOCKER.md)
+- Локальная разработка: [QUICKSTART.md](./QUICKSTART.md)
 
 ## Лицензия
 

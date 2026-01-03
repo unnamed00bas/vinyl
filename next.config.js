@@ -1,5 +1,8 @@
+const webpack = require('webpack')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   images: {
     domains: ['api.telegram.org', 'localhost'],
@@ -18,6 +21,16 @@ const nextConfig = {
     DATABASE_URL: process.env.DATABASE_URL,
     JWT_SECRET: process.env.JWT_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  },
+  webpack: (config, { isServer }) => {
+    // Исключаем canvas из клиентской сборки (используется только на сервере)
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        canvas: false,
+      }
+    }
+    return config
   },
 }
 

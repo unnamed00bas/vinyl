@@ -136,7 +136,8 @@ vinyl/
    - Установить webhook
 
 5. **Развертывание:**
-   - Выбрать хостинг (Vercel, Railway, etc.)
+   - Использовать Docker (см. DOCKER.md)
+   - Или развернуть на Ubuntu Server (см. UBUNTU_DEPLOYMENT.md)
    - Настроить переменные окружения
    - Запустить миграции
 

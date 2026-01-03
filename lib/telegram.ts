@@ -90,3 +90,81 @@ export function parseTelegramInitData(initData: string): {
     return {}
   }
 }
+
+/**
+ * Создание инвойса для платежа через Telegram Stars
+ */
+export async function createInvoiceLink(
+  chatId: number,
+  title: string,
+  description: string,
+  payload: string,
+  amount: number,
+  currency: string = 'XTR'
+): Promise<string | null> {
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.warn('TELEGRAM_BOT_TOKEN не настроен')
+    return null
+  }
+
+  try {
+    const response = await axios.post(`${TELEGRAM_API_URL}/createInvoiceLink`, {
+      title,
+      description,
+      payload,
+      currency,
+      prices: [
+        {
+          label: title,
+          amount: amount * 100, // Telegram требует сумму в минимальных единицах (для Stars это сотые)
+        },
+      ],
+    })
+
+    return response.data.result || null
+  } catch (error: any) {
+    console.error('Ошибка при создании инвойса:', error.response?.data || error)
+    return null
+  }
+}
+
+/**
+ * Отправка инвойса пользователю
+ */
+export async function sendInvoice(
+  chatId: number,
+  title: string,
+  description: string,
+  payload: string,
+  amount: number,
+  currency: string = 'XTR',
+  providerToken?: string
+) {
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.warn('TELEGRAM_BOT_TOKEN не настроен')
+    return null
+  }
+
+  try {
+    const response = await axios.post(`${TELEGRAM_API_URL}/sendInvoice`, {
+      chat_id: chatId,
+      title,
+      description,
+      payload,
+      currency,
+      prices: [
+        {
+          label: title,
+          amount: amount * 100,
+        },
+      ],
+      provider_token: providerToken, // Не требуется для Telegram Stars
+      provider_data: JSON.stringify({}),
+    })
+
+    return response.data.result || null
+  } catch (error: any) {
+    console.error('Ошибка при отправке инвойса:', error.response?.data || error)
+    return null
+  }
+}
