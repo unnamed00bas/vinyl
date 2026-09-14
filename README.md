@@ -1,102 +1,57 @@
-# Vinyl Telegram Mini App 🎵
+# Vinyl
 
-Мини-приложение для Telegram, которое создает виниловые пластинки с музыкой на основе описания пользователя.
+**Мини-приложение Telegram: человек описывает словами, какую музыку хочет, и получает свою виниловую пластинку — с треком, обложкой и вращением.**
 
-## Возможности
+[![Telegram Mini App](https://img.shields.io/badge/Telegram-Mini_App-0573B8?style=flat-square&labelColor=0C0F13)](https://core.telegram.org/bots/webapps)
+[![Next.js](https://img.shields.io/badge/Next.js-14-0573B8?style=flat-square&labelColor=0C0F13)](https://nextjs.org)
+[![Prisma](https://img.shields.io/badge/Prisma-SQLite-0573B8?style=flat-square&labelColor=0C0F13)](https://www.prisma.io)
+[![Автор](https://img.shields.io/badge/Автор-PROMAREN-E8A33B?style=flat-square&labelColor=0C0F13)](https://promaren.ru)
 
-- 🎵 Генерация музыки через Suno API (через KIE AI)
-- 🎨 Создание виниловых пластинок с вращающейся анимацией
-- 🖼️ Загрузка или генерация изображений для центра пластинки
-- 💰 Система платежей через Telegram Stars
-- 📱 Работает как Telegram Mini App, веб-сайт и мобильное приложение
-- 🔐 Админ-панель для управления
+---
 
-## Технологии
+## Что это
 
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
-- **Backend**: Node.js, Express
-- **Database**: SQLite, Prisma
-- **Video Processing**: FFmpeg
-- **AI Integration**: KIE AI (Suno API, LLM)
-- **Telegram**: Bot API, Mini App SDK
+Подарок, который собирается за минуту прямо в переписке. Человек пишет, о чём и для кого песня, выбирает настроение — приложение генерирует трек, рисует центральную наклейку и показывает готовую пластинку, которую можно крутить пальцем и слушать.
 
-## Установка
+Одна и та же сборка открывается тремя способами: как мини-приложение внутри Telegram, как обычный сайт и как приложение на телефоне.
 
-1. Клонируйте репозиторий
-2. Установите зависимости:
+## Что умеет
+
+- **Собирает трек по описанию.** Текст пользователя уходит в Suno через KIE AI и возвращается готовой песней.
+- **Делает пластинку.** Наклейка в центре либо генерируется, либо загружается своей картинкой; пластинка вращается, дорожка играет.
+- **Принимает оплату звёздами Telegram.** Покупка внутри мессенджера, без внешних платёжных форм.
+- **Даёт админскую часть.** Заказы, пользователи, состояние генераций видны в отдельном разделе с входом по паролю.
+
+## Как запустить
+
 ```bash
 npm install
+cp .env.example .env      # ключи KIE AI и токен бота
+npx prisma migrate dev    # база
+npm run dev               # экран на localhost:3000
+npm run server:dev        # серверная часть рядом
 ```
 
-3. Настройте переменные окружения:
-```bash
-cp .env.example .env
-```
+Для боевого запуска в репозитории лежат `Dockerfile`, `Caddyfile` и разбор развёртывания на Ubuntu.
 
-4. Настройте базу данных:
-```bash
-npx prisma migrate dev
-npx prisma generate
-```
+## Как устроено
 
-5. Запустите приложение:
-```bash
-npm run dev
-```
+| Часть | Чем сделана |
+| -- | -- |
+| Экран | Next.js 14, React, TypeScript, Tailwind |
+| Мост в Telegram | `@twa-dev/sdk` |
+| Серверная часть | Node.js и Express рядом с Next |
+| База | SQLite через Prisma |
+| Музыка | Suno через KIE AI |
+| Звук и видео | FFmpeg |
+| Оплата | Telegram Stars |
 
-## Структура проекта
+Подробные разборы лежат отдельными файлами: развёртывание, интеграция с KIE AI, платежи, быстрый старт.
 
-- `/app` - Next.js приложение (страницы и API routes)
-- `/components` - React компоненты
-- `/server` - Express сервер для обработки видео и API
-- `/prisma` - Схема базы данных
-- `/lib` - Утилиты и хелперы
-- `/public` - Статические файлы
-- `/scripts` - Скрипты для установки и деплоя
+## Состояние
 
-## Развертывание
+Прототип, доведённый до рабочего состояния в январе 2026 года. Генерация, пластинка и оплата работают; развитие остановлено.
 
-### Ubuntu Server
+---
 
-Для развертывания на Ubuntu Server используйте готовые скрипты:
-
-```bash
-# Первоначальная установка
-sudo ./scripts/ubuntu-setup.sh --domain your-domain.com
-
-# Управление приложением
-./scripts/ubuntu-manage.sh [start|stop|restart|status|logs|webhook]
-
-# Деплой обновлений
-./scripts/ubuntu-deploy.sh
-
-# Настройка Nginx
-sudo ./scripts/ubuntu-nginx.sh --domain your-domain.com --port 3000
-```
-
-Подробнее: [UBUNTU_DEPLOYMENT.md](./UBUNTU_DEPLOYMENT.md)
-
-### Docker
-
-Для развертывания через Docker с автоматическим SSL:
-
-```bash
-# Настройте .env файл с вашим доменом
-CADDY_DOMAIN=your-domain.com
-CADDY_EMAIL=admin@your-domain.com
-
-# Запустите контейнеры
-docker-compose up -d --build
-```
-
-Caddy автоматически получит SSL сертификат от Let's Encrypt при первом запуске.
-
-Подробнее: [DOCKER.md](./DOCKER.md)
-
-### Другие платформы
-
-- Локальная разработка: [QUICKSTART.md](./QUICKSTART.md)
-
-## Лицензия
-
-MIT
+Сделано в [PROMAREN](https://promaren.ru). Мини-приложения для Telegram и MAX под задачу бизнеса: [promaren.ru/products](https://promaren.ru/products/).
