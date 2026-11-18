@@ -5,7 +5,7 @@
 [![Telegram Mini App](https://img.shields.io/badge/Telegram-Mini_App-0573B8?style=flat-square&labelColor=0C0F13)](https://core.telegram.org/bots/webapps)
 [![Next.js](https://img.shields.io/badge/Next.js-14-0573B8?style=flat-square&labelColor=0C0F13)](https://nextjs.org)
 [![Prisma](https://img.shields.io/badge/Prisma-SQLite-0573B8?style=flat-square&labelColor=0C0F13)](https://www.prisma.io)
-[![Автор](https://img.shields.io/badge/Автор-PROMAREN-E8A33B?style=flat-square&labelColor=0C0F13)](https://promaren.ru)
+[![Автор](https://img.shields.io/badge/Автор-Марина_Погодина-1A1917?style=flat-square)](https://github.com/unnamed00bas)
 
 ---
 
@@ -54,4 +54,4 @@ npm run server:dev        # серверная часть рядом
 
 ---
 
-Сделано в [PROMAREN](https://promaren.ru). Мини-приложения для Telegram и MAX под задачу бизнеса: [promaren.ru/products](https://promaren.ru/products/).
+Автор: [Марина Погодина](https://github.com/unnamed00bas).
